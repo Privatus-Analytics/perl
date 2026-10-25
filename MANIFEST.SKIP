@@ -1,0 +1,16 @@
+^local/
+^blib/
+^\.git
+^\.github/
+^\.perlcriticrc$
+^\.perltidyrc$
+^Makefile$
+^Makefile\.old$
+^MYMETA\.
+^pm_to_blib$
+^PrivatusAnalytics-
+^run-docker\.sh$
+^SUBMISSION\.md$
+\.bak$
+\.tdy$
+\.DS_Store$

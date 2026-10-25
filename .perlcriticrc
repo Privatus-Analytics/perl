@@ -1,0 +1,10 @@
+severity = 4
+verbose  = 8
+
+# Accessors are generated subs, so strict refs is turned off there on purpose.
+[-Modules::RequireVersionVar]
+[-Subroutines::RequireArgUnpacking]
+[-TestingAndDebugging::ProhibitNoStrict]
+[-BuiltinFunctions::ProhibitStringyEval]
+# Public constants like PrivatusAnalytics::QUEUE_STUB are part of the API.
+[-ValuesAndExpressions::ProhibitConstantPragma]

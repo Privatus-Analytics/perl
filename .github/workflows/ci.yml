@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        perl: ["5.20", "5.26", "5.32", "5.36", "5.40"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shogo82148/actions-setup-perl@v1
+        with:
+          perl-version: ${{ matrix.perl }}
+      - run: cpanm -nq --installdeps .
+      - run: perl Makefile.PL && make && make test
+
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shogo82148/actions-setup-perl@v1
+        with:
+          perl-version: "5.40"
+      - run: cpanm -nq --installdeps --with-develop .
+      - run: perlcritic lib
+      - name: perltidy
+        run: |
+          for f in $(find lib t -name "*.pm" -o -name "*.t") Makefile.PL; do
+            perltidy --profile=.perltidyrc -st "$f" | diff -u "$f" - || exit 1
+          done
+
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shogo82148/actions-setup-perl@v1
+        with:
+          perl-version: "5.40"
+      - run: cpanm -nq --installdeps .
+      - run: perl Makefile.PL && make distcheck && make disttest && make dist

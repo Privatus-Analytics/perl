@@ -1,0 +1,31 @@
+name: Release
+
+# Builds the CPAN tarball for a v* tag and attaches it to a GitHub release.
+# PAUSE (the CPAN upload server) has no trusted publishing, so the upload to
+# CPAN is done by hand. See SUBMISSION.md.
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    environment: release
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shogo82148/actions-setup-perl@v1
+        with:
+          perl-version: "5.40"
+      - run: cpanm -nq --installdeps .
+      - name: Check the tag matches the version
+        run: |
+          version=$(perl -Ilib -MPrivatusAnalytics -e 'print $PrivatusAnalytics::VERSION')
+          test "v$version" = "$GITHUB_REF_NAME" || { echo "Tag $GITHUB_REF_NAME does not match $version"; exit 1; }
+      - run: perl Makefile.PL && make && make test && make dist
+      - name: Attach the tarball to a GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" PrivatusAnalytics-*.tar.gz --title "$GITHUB_REF_NAME" --notes "See CHANGELOG.md."
