@@ -221,17 +221,23 @@ sub _inline_script {
 
 # The tag HTML. Takes any setting as a per call override, plus
 # request (passed to a props or nonce code ref) and props (merged over the
-# configured props). Returns '' when no tag should print.
+# configured props). When the tag is off it returns only the queue stub (when
+# queue_stub is on) or ''.
 sub tag {
     my ( $self, @args ) = @_;
     my %options = @args == 1 && ref $args[0] eq 'HASH' ? %{ $args[0] } : @args;
     my $request = delete $options{request};
     my $props   = delete $options{props};
     my $config  = %options ? $self->with(%options) : $self;
-    return '' unless $config->should_render;
 
     my $nonce = $config->{nonce};
     $nonce = $nonce->($request) if ref $nonce eq 'CODE';
+
+    # When the tag is off, only the queue stub prints (if it is on), so
+    # privatus.track calls never fail. The props code ref is not called.
+    unless ( $config->should_render ) {
+        return $config->{queue_stub} ? _inline_script( QUEUE_STUB, $nonce ) : '';
+    }
 
     my $props_json = page_props_json( $config->page_props( $request, $props ) );
     my @attrs      = $config->attributes($nonce);
@@ -447,7 +453,8 @@ pairs, or a code ref that gets the request. See L</"Page props">.
 =item queue_stub
 
 True prints a small script first, so C<privatus.track> calls made before the
-tracker loads are kept and sent later.
+tracker loads are kept and sent later. It still prints when the tag is off
+(then nothing else prints), so those calls never fail.
 
 =item nonce
 
@@ -485,7 +492,8 @@ get and set accessor of the same name.
 
 =item tag(%options)
 
-The tag HTML, or an empty string. Takes any setting as a per call override,
+The tag HTML. When the tag is off it is only the queue stub (when
+C<queue_stub> is on) or an empty string. Takes any setting as a per call override,
 plus C<request> (passed to the C<props> and C<nonce> code refs) and C<props>
 (merged over the configured props; C<undef> removes one).
 
@@ -639,6 +647,11 @@ If your code may run before the tracker has loaded, set C<< queue_stub => 1 >>.
 It prints this tiny script before the tracker:
 
   <script>window.privatus=window.privatus||{q:[]};['track','pageview','props','optOut','optIn','ready'].forEach(function(m){window.privatus[m]=window.privatus[m]||function(){window.privatus.q.push([m,Array.prototype.slice.call(arguments)])}})</script>
+
+The stub prints even where the tag is off (in development, with
+C<< enabled => 0 >>, or with no site id). Then only the stub prints, so you can
+always call C<privatus.track(...)>. In development the calls just wait in the
+queue and are never sent.
 
 See the L<JavaScript API docs|https://privatusanalytics.com/docs/tracker/javascript-api>.
 

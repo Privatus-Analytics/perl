@@ -116,7 +116,8 @@ In production it prints:
 ```
 
 The tag prints nothing when there is no site id, and nothing outside
-production (see below). If your app uses a Content Security Policy nonce (a
+production (see below). The one exception is the queue stub: when it is on,
+it still prints (see [Track from your own JavaScript](#track-from-your-own-javascript)). If your app uses a Content Security Policy nonce (a
 random code that lets a script run), pass it as the `nonce` setting. The
 Mojolicious plugin also uses the `csp_nonce` stash value, the Dancer2 plugin
 the `csp_nonce` var, and the Plack middleware `$env->{'plack.csp_nonce'}`.
@@ -182,7 +183,7 @@ plugin PrivatusAnalytics => {
 | `auto_inject` | `0` | Adds the tag to the head of HTML pages. On by default in the Plack middleware |
 | `extra_attributes` | `{}` | Any other `data-*` attribute |
 | `props` | `{}` | Page props sent with every pageview and event. A hash ref, or a code ref that gets the request. See below |
-| `queue_stub` | `0` | Prints a small script first, so `privatus.track` calls made before the tracker loads are kept and sent later |
+| `queue_stub` | `0` | Prints a small script first, so `privatus.track` calls made before the tracker loads are kept and sent later. It still prints when the tag is off, so those calls never fail |
 | `nonce` | none | The Content Security Policy nonce. A string, or a code ref that gets the request |
 
 Lists can be array refs or comma separated text. Each tracker attribute is
@@ -369,9 +370,11 @@ sends them once the tracker is ready:
 queue_stub => 1
 ```
 
-or for one layout: `%= privatus_analytics_tag queue_stub => 1`. Like the tag,
-the stub prints only where the tag is on, so in development use
-`window.privatus && privatus.track(...)`.
+or for one layout: `%= privatus_analytics_tag queue_stub => 1`. The stub
+prints even where the tag is off (in development, with `enabled => 0`, or with
+no site id). Then only the stub prints: no tracker and no page props. So you
+can always call `privatus.track(...)`. In development the calls just wait in
+the queue and are never sent.
 
 ### See the results
 
@@ -392,6 +395,15 @@ reads IP addresses or browser details, and nothing is sent from your server.
 Keep people out of your props and event props: no names, emails or user ids.
 See the [privacy documentation](https://privatusanalytics.com/docs/privacy)
 for what is collected.
+
+If you have a privacy policy, it should say which tools handle your visitors' data. You can paste this:
+
+> This website uses [Privatus Analytics](https://privatusanalytics.com/privacy-analytics) to count visits. It
+> does not use cookies and does not follow you from one website to another. Your IP address is used for a moment
+> to count visits and is never stored.
+
+Change it to fit your site. The [privacy policy generator](https://privatusanalytics.com/tools/privacy-policy-generator)
+makes a longer version with your site's name in it.
 
 ## Development
 

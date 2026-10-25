@@ -116,6 +116,32 @@ subtest 'queue stub' => sub {
 
     like( pa()->tag( queue_stub => 1 ), qr/q:\[\]/, 'the stub can be switched on per call' );
     unlike( pa()->tag, qr/q:\[\]/, 'off by default' );
+
+    my $boom = sub { die "should not run\n" };
+    is(
+        pa( enabled => 0, queue_stub => 1, props => $boom )->tag( nonce => 'abc', props => { plan => 'pro' } ),
+        qq{<script nonce="abc">$stub</script>},
+        'off with the stub on prints exactly the stub, with the nonce'
+    );
+    is( pa( enabled => 0, queue_stub => 1 )->tag, "<script>$stub</script>", 'off with the stub on and no nonce' );
+    is( pa( enabled => 0, queue_stub => 0 )->tag( props => { plan => 'pro' }, nonce => 'abc' ),
+        '', 'off with the stub off prints nothing' );
+    is(
+        pa( site_id => undef, queue_stub => 1 )->tag( nonce => 'abc', props => { plan => 'pro' } ),
+        qq{<script nonce="abc">$stub</script>},
+        'no site id with the stub on prints only the stub'
+    );
+    is(
+        PrivatusAnalytics->new( site_id => 'pa_X', queue_stub => 1 )->tag,
+        "<script>$stub</script>",
+        'outside production with the stub on prints only the stub'
+    );
+    is( pa()->tag( enabled => 0, queue_stub => 1 ), "<script>$stub</script>", 'per call off and stub on' );
+    ok(
+        !pa( auto_inject => 1, enabled => 0, queue_stub => 1 )
+          ->wants_inject( status => 200, content_type => 'text/html' ),
+        'auto inject still adds nothing when off'
+    );
 };
 
 subtest 'inject' => sub {

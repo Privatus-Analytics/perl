@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Changed: with `queue_stub` on, a tag that is off (outside production, `enabled => 0` or no site id) now
+  prints the queue stub and nothing else, so `privatus.track(...)` calls in your own JavaScript never fail.
+  Before, it printed nothing. With `queue_stub` off it still prints nothing. The props code ref is still not
+  called when the tag is off.
+- Added `example/`, a small Mojolicious app for the conformance tests.
+- README: a privacy policy paragraph you can paste.
+
 ## 1.0.0 - 2026-10-25
 
 - Initial release.

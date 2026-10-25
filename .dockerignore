@@ -1,0 +1,10 @@
+.git
+.github
+local
+blib
+Makefile
+Makefile.old
+MYMETA.*
+pm_to_blib
+PrivatusAnalytics-*
+SUBMISSION.md
